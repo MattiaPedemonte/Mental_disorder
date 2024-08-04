@@ -12,24 +12,44 @@
 
 import pandas as pd
 # Read the CSV file
-Data = pd.read_csv("Dataset-Mental-Disorders.csv")
-patient_number = Data.iloc[1,:]
-unique_sadness_value = Data.Sadness.unique()
-column_count = Data.Sadness.value_counts().values
-print(column_count)
+Data = pd.read_csv("Dataset-Mental-Disorders-Clean.csv")
 features = list(Data.columns)
 print(features)
 
-dummies = pd.get_dummies(Data, columns = ['Sadness'], dtype=int).values
-print(dummies)
-features = list(Data.columns)
-print(features)
-# print(Data)
-# print(patient_number)
-# View the first 5 rows
-Data.head()
+patient_number = Data.iloc[:,0]
+Dataset = Data.iloc[:,1:-1]
+print(list(Dataset.columns))
+y = Data.iloc[:,-1]
+print(y.name)
+
+import numpy as np
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
+# Standardizza i dati
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(Dataset)
+
+# Esegui PCA
+pca = PCA(n_components=2)  # Cambia n_components se desideri più componenti
+principal_components = pca.fit_transform(scaled_data)
+
+# Crea un DataFrame con i risultati PCA
+pca_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2'])
+
+# Unisci i risultati PCA con le etichette originali (se presenti)
+final_df = pd.concat([pca_df, y], axis=1)  # Supponendo che ci sia una colonna 'label'
+
+# Plot PCA
+plt.figure(figsize=(8,6))
+sns.scatterplot(x='PC1', y='PC2', hue='Expert Diagnose', data=final_df, palette='viridis')
+plt.title('PCA di due componenti principali')
+plt.xlabel('Prima componente principale')
+plt.ylabel('Seconda componente principale')
+plt.show()
 # object for callback function during training
 #loss_callback = LossCallback()
 
