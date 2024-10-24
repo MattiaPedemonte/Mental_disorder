@@ -139,3 +139,90 @@ print(report)
 ConfusionMatrixDisplay(confusion_matrix=randomForest_cm).plot()
 plt.title('Confusion Matrix best RandomForest')
 plt.show()
+
+
+## xgboost
+from xgboost import XGBClassifier
+from xgboost import plot_importance
+
+
+print("\nXGBoostClassifier\n")
+xgb_cl = XGBClassifier(
+    n_estimators=100,          # Number of trees
+    max_depth=9,               # Maximum depth of each tree
+    learning_rate=0.05,        # Step size shrinkage
+    subsample=0.8,             # Fraction of samples used for training
+    colsample_bytree=0.8,      # Fraction of features used for each tree
+    gamma=0.1,                 # Minimum loss reduction
+    reg_alpha=0.01,            # L1 regularization (Lasso)
+    reg_lambda=1.5,            # L2 regularization (Ridge)
+    eval_metric='mlogloss'     # Evaluation metric
+)
+# Train the model
+xgb_cl.fit(X_train, y_train)
+xgb_predictions = xgb_cl.predict(X_test)
+accuracy = accuracy_score(y_test, xgb_predictions)
+randomForest_cm = confusion_matrix(y_test, xgb_predictions)
+print(randomForest_cm)
+print("Accuracy:", accuracy)
+
+# Define the hyperparameter grid to search
+param_grid = {
+    'n_estimators': [50, 100, 200],        # Number of trees
+    'max_depth': [3, 6, 9],                # Maximum depth of each tree
+    'learning_rate': [0.01, 0.05, 0.1],    # Step size shrinkage
+    'subsample': [0.6, 0.8, 1.0],          # Fraction of samples to be used for training
+    'colsample_bytree': [0.6, 0.8, 1.0],   # Fraction of features to be used for each tree
+    'gamma': [0, 0.1, 0.3],                # Minimum loss reduction required for further partitioning
+    'reg_alpha': [0, 0.01, 0.1],           # L1 regularization (Lasso)
+    'reg_lambda': [1, 1.5, 2],             # L2 regularization (Ridge)
+}
+
+# Create a random forest classifier
+xgb_cl = XGBClassifier(use_label_encoder=False, eval_metric='mlogloss')
+
+# Use random search to find the best hyperparameters
+random_search = RandomizedSearchCV(
+    estimator=xgb_cl, 
+    param_distributions=param_grid, 
+    n_iter=20,          # Number of random combinations to try
+    scoring='accuracy', # Evaluation metric
+    cv=5,               # 5-fold cross-validation
+    verbose=1,          # Show progress
+    random_state=42,    # For reproducibility
+    n_jobs=-1           # Use all available cores
+)
+# Fit the random search object to the data
+rand_search.fit(X_train, y_train)
+
+# Create a variable for the best model
+best_xgb_cl = rand_search.best_estimator_
+
+# Print the best hyperparameters
+print('Best hyperparameters:',  rand_search.best_params_)
+
+# Generate predictions with the best model
+best_xgb_cl_predictions = best_xgb_cl.predict(X_test)
+
+# Create the confusion matrix
+XGBoost_cm = confusion_matrix(y_test, best_xgb_cl_predictions)
+accuracy = accuracy_score(y_test, best_xgb_cl_predictions)
+precision = precision_score(y_test, best_xgb_cl_predictions, average='macro')
+recall = recall_score(y_test, best_xgb_cl_predictions, average='macro')
+f1 = f1_score(y_test, best_xgb_cl_predictions, average='macro')
+
+print(XGBoost_cm)
+print("Accuracy:", accuracy)
+print("Precision:", precision)
+print("Recall:", recall)
+print("F1 Score:", f1) # Calculate F1-score
+
+from sklearn.metrics import classification_report
+# Generate classification report
+report = classification_report(y_test, best_randomForest_predictions)
+print(report)
+
+
+ConfusionMatrixDisplay(confusion_matrix=XGBoost_cm).plot()
+plt.title('Confusion Matrix best RandomForest')
+plt.show()
